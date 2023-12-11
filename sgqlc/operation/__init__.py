@@ -1492,7 +1492,7 @@ number
 >>> op.repository(id='repo2', __alias__='alias').issues.title()
 title
 >>> type(op['repository'])  # it's the selector, not a selection!
-<class 'sgqlc.operation.Selector'>
+<class 'sgqlc.operation.__init__.Selector'>
 >>> op['repository'].__selection__() # default selection
 repository(id: "repo1") {
   issues {
@@ -1530,13 +1530,22 @@ __all__ = ('Operation',)
 from collections import OrderedDict
 from contextlib import contextmanager
 
-from ..types import BaseTypeWithTypename, Union, ContainerType, ArgDict, \
-    global_schema
+from ..types import (
+    BaseTypeWithTypename,
+    Union,
+    ContainerType,
+    ArgDict,
+    global_schema,
+)
 
 
 DEFAULT_AUTO_SELECT_DEPTH = 2
 PROXIED_FIELDS = {
-    '__type__', '__casts__', '__as__', '__fragment__', '__fragments__',
+    '__type__',
+    '__casts__',
+    '__as__',
+    '__fragment__',
+    '__fragments__',
 }
 
 
@@ -1616,8 +1625,12 @@ class Selection:
     '''
 
     __slots__ = (
-        '__alias__', '__field__', '__args__', '__field_selector',
-        '__selection_list', '__typename',
+        '__alias__',
+        '__field__',
+        '__args__',
+        '__field_selector',
+        '__selection_list',
+        '__typename',
     )
 
     def __init__(self, alias, field, args, typename=None):
@@ -1631,16 +1644,16 @@ class Selection:
             self.__selection_list = SelectionList(field.type)
 
     def __get_selections_or_auto_select__(
-            self, auto_select_depth=None,
-            typename=None):
-        auto_select_depth = auto_select_depth or DEFAULT_AUTO_SELECT_DEPTH
+        self, auto_select_depth=DEFAULT_AUTO_SELECT_DEPTH, typename=None
+    ):
         selections = self.__selection_list
         if selections is None or selections:
             return selections
         if typename is None:
             typename = self.__typename
         return self.__get_all_fields_selection_list(
-            auto_select_depth, [], typename)
+            auto_select_depth, [], typename
+        )
 
     def __len__(self):
         if self.__selection_list is not None:
@@ -1669,15 +1682,19 @@ class Selection:
         '''
         self.__selection_list.__fields__(*names, **names_and_args)
 
-    def __to_graphql__(self, indent=0, indent_string='  ',
-                       auto_select_depth=None,
-                       typename=None):
-        auto_select_depth = auto_select_depth or DEFAULT_AUTO_SELECT_DEPTH
+    def __to_graphql__(
+        self,
+        indent=0,
+        indent_string='  ',
+        auto_select_depth=DEFAULT_AUTO_SELECT_DEPTH,
+        typename=None,
+    ):
         prefix = indent_string * indent
 
         alias = self.__alias__ + ': ' if self.__alias__ else ''
         args = self.__field__.args.__to_graphql_input__(
-            self.__args__, indent, indent_string)
+            self.__args__, indent, indent_string
+        )
 
         query = ''
         if self.__selection_list is not None:
@@ -1686,9 +1703,11 @@ class Selection:
             selections = self.__selection_list
             if not selections:
                 selections = self.__get_all_fields_selection_list(
-                    auto_select_depth, [], typename)
+                    auto_select_depth, [], typename
+                )
             query = ' ' + selections.__to_graphql__(
-                indent, indent_string, auto_select_depth, typename)
+                indent, indent_string, auto_select_depth, typename
+            )
         return prefix + alias + self.__field__.graphql_name + args + query
 
     def __collect_fragments__(self, fragments):
@@ -1716,18 +1735,22 @@ class Selection:
         except KeyError as exc:
             raise AttributeError('%s has no field %s' % (self, name)) from exc
         except ValueError as exc:
-            raise AttributeError('%s failed to get field %s' %
-                                 (self, name)) from exc
+            raise AttributeError(
+                '%s failed to get field %s' % (self, name)
+            ) from exc
 
     def __getitem__(self, name):
         if self.__selection_list is None:
-            raise ValueError('Field %r of %s is not a container type.' %
-                             (self.__field__, self.__field__.container))
+            raise ValueError(
+                'Field %r of %s is not a container type.'
+                % (self.__field__, self.__field__.container)
+            )
 
         selector = self.__field_selector.get(name)
         if selector is None:
             selector = self.__field_selector[name] = Selector(
-                self.__selection_list, self.__field__.type[name])
+                self.__selection_list, self.__field__.type[name]
+            )
 
         return selector
 
@@ -1803,7 +1826,9 @@ class Selector:
     '''
 
     __slots__ = (
-        '__parent__', '__field__', '__selections',
+        '__parent__',
+        '__field__',
+        '__selections',
     )
 
     def __init__(self, parent, field):
@@ -1823,11 +1848,16 @@ class Selector:
             if not args:
                 return s
             raise ValueError(
-                ('%s already have a selection %s. '
-                 'Maybe use __alias__ as param?') % (self.__field__, s))
+                (
+                    '%s already have a selection %s. '
+                    'Maybe use __alias__ as param?'
+                )
+                % (self.__field__, s)
+            )
 
         s = self.__selections[alias] = Selection(
-            alias, self.__field__, args, typename)
+            alias, self.__field__, args, typename
+        )
         self.__parent__ += s
         return s
 
@@ -1842,8 +1872,7 @@ class Selector:
         return self().__as__(typ)
 
     def __fragment__(self, fragment):
-        '''Spread the given fragment in the selection list.
-        '''
+        '''Spread the given fragment in the selection list.'''
         return self().__fragment__(fragment)
 
     def __dir__(self):
@@ -1877,8 +1906,9 @@ class Selector:
         except KeyError as exc:
             raise AttributeError('%s has no field %s' % (self, name)) from exc
         except ValueError as exc:
-            raise AttributeError('%s failed to get field %s' %
-                                 (self, name)) from exc
+            raise AttributeError(
+                '%s failed to get field %s' % (self, name)
+            ) from exc
 
     def __getitem__(self, name):
         return self()[name]
@@ -1953,12 +1983,18 @@ class SelectionList:
 
     '''  # noqa: E501
 
-    __slots__ = ('__type', '__selectors', '__selections', '__casts',
-                 '__fragments')
+    __slots__ = (
+        '__type',
+        '__selectors',
+        '__selections',
+        '__casts',
+        '__fragments',
+    )
 
     def __init__(self, typ):
-        assert issubclass(typ, BaseTypeWithTypename), \
+        assert issubclass(typ, BaseTypeWithTypename), (
             str(typ) + ': not a selection list type (container or union)'
+        )
         self.__type = typ
         self.__selectors = {}
         self.__selections = []
@@ -1974,24 +2010,38 @@ class SelectionList:
     def __bytes__(self):
         return bytes(self.__to_graphql__(indent_string=''), 'utf-8')
 
-    def __to_graphql__(self, indent=0, indent_string='  ',
-                       auto_select_depth=None,
-                       typename=None):
-        auto_select_depth = auto_select_depth or DEFAULT_AUTO_SELECT_DEPTH
+    def __to_graphql__(
+        self,
+        indent=0,
+        indent_string='  ',
+        auto_select_depth=DEFAULT_AUTO_SELECT_DEPTH,
+        typename=None,
+    ):
         prefix = indent_string * indent
         next_indent = indent + 1
 
         s = ['{']
         for v in self.__selections:
-            s.append(v.__to_graphql__(
-                next_indent, indent_string, auto_select_depth, typename,
-            ))
+            s.append(
+                v.__to_graphql__(
+                    next_indent,
+                    indent_string,
+                    auto_select_depth,
+                    typename,
+                )
+            )
 
         next_prefix = prefix + indent_string
         for v in self.__casts.values():
-            s.append(next_prefix + v.__to_graphql__(
-                next_indent, indent_string, auto_select_depth, typename,
-            ))
+            s.append(
+                next_prefix
+                + v.__to_graphql__(
+                    next_indent,
+                    indent_string,
+                    auto_select_depth,
+                    typename,
+                )
+            )
         for lst in self.__fragments.values():
             for v in lst:
                 s.append(next_prefix + v.__spread__())
@@ -2074,9 +2124,9 @@ class SelectionList:
 
     def __fragment__(self, fragment):
         assert isinstance(fragment, Fragment)
-        self.__fragments.setdefault(
-            fragment.__type__.__name__, []
-        ).append(fragment)
+        self.__fragments.setdefault(fragment.__type__.__name__, []).append(
+            fragment
+        )
         self.__typename__()
 
     def __select_all_types(self, depth, trail, child_typename):
@@ -2110,8 +2160,9 @@ class SelectionList:
         if issubclass(self.__type, Union):
             self.__select_all_types(depth, trail, child_typename)
         else:
-            self.__select_all_fields(depth, trail,
-                                     self_typename, child_typename)
+            self.__select_all_fields(
+                depth, trail, self_typename, child_typename
+            )
 
         trail.pop()
 
@@ -2224,12 +2275,16 @@ class SelectionList:
 
 
 class InlineFragmentSelectionList(SelectionList):
-    def __to_graphql__(self, indent=0, indent_string='  ',
-                       auto_select_depth=None,
-                       typename=None):
-        auto_select_depth = auto_select_depth or DEFAULT_AUTO_SELECT_DEPTH
+    def __to_graphql__(
+        self,
+        indent=0,
+        indent_string='  ',
+        auto_select_depth=DEFAULT_AUTO_SELECT_DEPTH,
+        typename=None,
+    ):
         selection = SelectionList.__to_graphql__(
-            self, indent, indent_string, auto_select_depth, typename)
+            self, indent, indent_string, auto_select_depth, typename
+        )
         return '... on %s %s' % (self.__type__, selection)
 
 
@@ -2247,14 +2302,17 @@ class Fragment(SelectionList):
     def __spread__(self):
         return '...%s' % (self.__name,)
 
-    def __to_graphql__(self, indent=0, indent_string='  ',
-                       auto_select_depth=None,
-                       typename=None):
-        auto_select_depth = auto_select_depth or DEFAULT_AUTO_SELECT_DEPTH
+    def __to_graphql__(
+        self,
+        indent=0,
+        indent_string='  ',
+        auto_select_depth=DEFAULT_AUTO_SELECT_DEPTH,
+        typename=None,
+    ):
         selection = SelectionList.__to_graphql__(
-            self, indent, indent_string, auto_select_depth, typename)
-        return 'fragment %s on %s %s' % (
-            self.__name, self.__type__, selection)
+            self, indent, indent_string, auto_select_depth, typename
+        )
+        return 'fragment %s on %s %s' % (self.__name, self.__type__, selection)
 
 
 class GraphQLErrors(RuntimeError):
@@ -2468,20 +2526,23 @@ class Operation:
         else:  # pragma: no cover
             raise ValueError(
                 "schema doesn't define %s as query, mutation "
-                "or subscription type"
-                % (typ.__name__,)
+                'or subscription type' % (typ.__name__,)
             )
 
-    def __to_graphql__(self, indent=0, indent_string='  ',
-                       auto_select_depth=None,
-                       typename=None):
-        auto_select_depth = auto_select_depth or DEFAULT_AUTO_SELECT_DEPTH
+    def __to_graphql__(
+        self,
+        indent=0,
+        indent_string='  ',
+        auto_select_depth=DEFAULT_AUTO_SELECT_DEPTH,
+        typename=None,
+    ):
         prefix = indent_string * indent
         kind = self.__kind
         name = ' ' + self.__name if self.__name else ''
         args = self.__args.__to_graphql__(indent, indent_string)
         selections = self.__selection_list.__to_graphql__(
-            indent, indent_string, auto_select_depth, typename)
+            indent, indent_string, auto_select_depth, typename
+        )
 
         fragments = self.__selection_list.__collect_fragments__()
         frags_gql = [

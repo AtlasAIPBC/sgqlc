@@ -77,12 +77,16 @@ The end-user classes and functions provided by this module are:
  - :func:`list_of()`, maps to GraphQL ``[Type]`` and enforces the
    object is a list of ``Type``.
 
-This module only provide built-in scalar types. However, two other
+This module only provide built-in scalar types. However, three other
 modules will extend the behavior for common conventions:
 
  - :mod:`sgqlc.types.datetime` will declare ``DateTime``, ``Date`` and
    ``Time``, mapping to Python's :mod:`datetime`. This also allows
    fields to be declared as ``my_date = datetime.date``,
+
+ - :mod:`sgqlc.types.uuid` will declare ``UUID``,
+   mapping to Python's :mod:`uuid`. This also allows
+   fields to be declared as ``my_uuid = uuid.UUID``,
 
  - :mod:`sgqlc.types.relay` will declare ``Node`` and ``Connection``,
    matching `Relay <https://facebook.github.io/relay/>`_ `Global
@@ -166,18 +170,6 @@ schema {
   scalar String
   scalar Boolean
   scalar ID
-  scalar Time
-  scalar Date
-  scalar DateTime
-  interface Node {
-    id: ID!
-  }
-  type PageInfo {
-    endCursor: String
-    startCursor: String
-    hasNextPage: Boolean!
-    hasPreviousPage: Boolean!
-  }
   type TypeUsingPython {
     aInt: Int
     aFloat: Float
@@ -591,9 +583,24 @@ import re
 from collections import OrderedDict
 
 __all__ = (
-    'Schema', 'Scalar', 'Enum', 'Union', 'Variable', 'Arg', 'ArgDict',
-    'Field', 'Type', 'Interface', 'Input', 'Int', 'Float', 'String',
-    'Boolean', 'ID', 'non_null', 'list_of',
+    'Schema',
+    'Scalar',
+    'Enum',
+    'Union',
+    'Variable',
+    'Arg',
+    'ArgDict',
+    'Field',
+    'Type',
+    'Interface',
+    'Input',
+    'Int',
+    'Float',
+    'String',
+    'Boolean',
+    'ID',
+    'non_null',
+    'list_of',
 )
 
 
@@ -630,8 +637,15 @@ class Schema:
 
     The schema is an iterator that will report all registered types.
     '''
-    __slots__ = ('__all', '__kinds', '__cache__',
-                 'query_type', 'mutation_type', 'subscription_type')
+
+    __slots__ = (
+        '__all',
+        '__kinds',
+        '__cache__',
+        'query_type',
+        'mutation_type',
+        'subscription_type',
+    )
 
     def __init__(self, base_schema=None):
         self.__all = OrderedDict()
@@ -726,8 +740,6 @@ class Schema:
         >>> for t in global_schema.type.values():  # doctest: +ELLIPSIS
         ...     print(repr(t))
         ...
-        type PageInfo {
-        ...
         type TypeUsingPython {
         ...
         type TypeUsingSGQLC {
@@ -815,8 +827,9 @@ class Schema:
         name = typ.__name__
         t = self.__all.setdefault(name, typ)
         if t is not typ:
-            raise ValueError('%s already has %s=%s' %
-                             (self.__class__.__name__, name, typ))
+            raise ValueError(
+                '%s already has %s=%s' % (self.__class__.__name__, name, typ)
+            )
         self.__kinds.setdefault(typ.__kind__, ODict()).update({name: typ})
         if self.query_type is None and name == 'Query':
             self.query_type = t
@@ -886,10 +899,15 @@ global_schema = Schema()
 
 class BaseMeta(type):
     'Automatically adds class to its schema'
+
     def __init__(cls, name, bases, namespace):
         super(BaseMeta, cls).__init__(name, bases, namespace)
-        if not bases or BaseType in bases or \
-                BaseTypeWithTypename in bases or ContainerType in bases:
+        if (
+            not bases
+            or BaseType in bases
+            or BaseTypeWithTypename in bases
+            or ContainerType in bases
+        ):
             return
 
         auto_register_name = '_%s__auto_register' % (name,)
@@ -933,15 +951,15 @@ class BaseMeta(type):
 
 
 class BaseType(metaclass=BaseMeta):
-    '''Base shared by all GraphQL classes.
+    '''Base shared by all GraphQL classes.'''
 
-    '''
     __schema__ = global_schema
     __kind__ = None
 
 
 class BaseMetaWithTypename(BaseMeta):
     'BaseMeta with ``__typename`` field (containers and union).'
+
     def __init__(cls, name, bases, namespace):
         super(BaseMetaWithTypename, cls).__init__(name, bases, namespace)
 
@@ -973,7 +991,7 @@ def get_variable_or_none(v):
 
 def get_variable_or_none_input(v, indent, indent_string):
     if v is None:
-        return "null"
+        return 'null'
     if isinstance(v, Variable):
         return Variable.__to_graphql_input__(v, indent, indent_string)
 
@@ -985,6 +1003,7 @@ def create_realize_type(t):
         if isinstance(v, (t, Variable)):
             return v
         return t(v, selection_list)
+
     return realize_type
 
 
@@ -1002,11 +1021,15 @@ def _create_non_null_wrapper(name, t):
         value = realize_type(value)
         return t.__to_graphql_input__(value, indent, indent_string)
 
-    return type(name, (t,), {
-        '__new__': __new__,
-        '_%s__auto_register' % name: False,
-        '__to_graphql_input__': __to_graphql_input__,
-    })
+    return type(
+        name,
+        (t,),
+        {
+            '__new__': __new__,
+            '_%s__auto_register' % name: False,
+            '__to_graphql_input__': __to_graphql_input__,
+        },
+    )
 
 
 def get_list_input(t, realize_type, value, indent, indent_string):
@@ -1049,12 +1072,16 @@ def _create_list_of_wrapper(name, t):
     def __to_json_value__(value):
         return get_list_json(t, value)
 
-    return type(name, (t,), {
-        '__new__': __new__,
-        '_%s__auto_register' % name: False,
-        '__to_graphql_input__': __to_graphql_input__,
-        '__to_json_value__': __to_json_value__,
-    })
+    return type(
+        name,
+        (t,),
+        {
+            '__new__': __new__,
+            '_%s__auto_register' % name: False,
+            '__to_graphql_input__': __to_graphql_input__,
+            '__to_json_value__': __to_json_value__,
+        },
+    )
 
 
 class Lazy:
@@ -1063,6 +1090,7 @@ class Lazy:
     This is used to solve cross reference problems, the fields will
     store an instance of this until it's evaluated.
     '''
+
     __slots__ = ('name', 'target_name', 'ready_cb', 'inner_lazy')
 
     def __init__(self, name, target_name, ready_cb, inner_lazy=None):
@@ -1370,6 +1398,7 @@ class Scalar(BaseType):
     $var
 
     '''
+
     __kind__ = 'scalar'
     __json_dump_args__ = {}  # given to json.dumps(obj, **args)
 
@@ -1388,8 +1417,9 @@ class Scalar(BaseType):
     def __to_graphql_input__(cls, value, indent=0, indent_string='  '):
         if hasattr(value, '__to_graphql_input__'):
             return value.__to_graphql_input__(value, indent, indent_string)
-        return json.dumps(cls.__to_json_value__(value),
-                          **cls.__json_dump_args__)
+        return json.dumps(
+            cls.__to_json_value__(value), **cls.__json_dump_args__
+        )
 
     @classmethod
     def __to_json_value__(cls, value):
@@ -1398,6 +1428,7 @@ class Scalar(BaseType):
 
 class EnumMeta(BaseMeta):
     'meta class to set enumeration attributes, __contains__, __iter__...'
+
     def __init__(cls, name, bases, namespace):
         super(EnumMeta, cls).__init__(name, bases, namespace)
         if isinstance(cls.__choices__, str):
@@ -1426,6 +1457,8 @@ class EnumMeta(BaseMeta):
         return '\n'.join(s)
 
     def __to_graphql_input__(cls, value, indent=0, indent_string='  '):
+        if value is None:
+            return 'null'
         return value
 
     def __to_json_value__(cls, value):
@@ -1473,6 +1506,8 @@ class Enum(BaseType, metaclass=EnumMeta):
 
     >>> print(Fruits.__to_graphql_input__(Fruits.APPLE))
     APPLE
+    >>> print(Fruits.__to_graphql_input__(None))
+    null
 
     And for JSON it's a string as well (so JSON encoder adds quotes):
 
@@ -1484,6 +1519,7 @@ class Enum(BaseType, metaclass=EnumMeta):
     >>> Fruits(Variable('var'))
     $var
     '''
+
     __kind__ = 'enum'
     __choices__ = ()
 
@@ -1630,15 +1666,18 @@ class Union(BaseTypeWithTypename, metaclass=UnionMeta):
 
 
 class ContainerTypeMeta(BaseMetaWithTypename):
-    '''Creates container types, ensures fields are instance of Field.
-    '''
+    '''Creates container types, ensures fields are instance of Field.'''
+
     def __init__(cls, name, bases, namespace):
         super(ContainerTypeMeta, cls).__init__(name, bases, namespace)
         cls.__fields = OrderedDict()
         cls.__interfaces__ = ()
 
-        if not bases or BaseTypeWithTypename in bases or \
-                ContainerType in bases:
+        if (
+            not bases
+            or BaseTypeWithTypename in bases
+            or ContainerType in bases
+        ):
             return
 
         if cls.__kind__ == 'interface':
@@ -1677,14 +1716,10 @@ class ContainerTypeMeta(BaseMetaWithTypename):
 
     def __get_field_names(cls):
         try:
-            return getattr(cls, "__field_names__")
+            return getattr(cls, '__field_names__')
         except AttributeError:
             all_fields = super(ContainerTypeMeta, cls).__dir__()
-            return (
-                name
-                for name in all_fields
-                if not name.startswith("_")
-            )
+            return (name for name in all_fields if not name.startswith('_'))
 
     def __create_own_fields(cls):
         # call the parent __dir__(), we don't want our overridden version
@@ -1772,9 +1807,10 @@ class ContainerType(BaseTypeWithTypename, metaclass=ContainerTypeMeta):
 
      - ``name = str`` to create a simple string field. Other basic
        types are allowed as well: ``int``, ``float``, ``str``,
-       ``bool``, ``datetime.time``, ``datetime.date`` and
-       ``datetime.datetime``. These are only used as identifiers to
-       translate using ``map_python_to_graphql`` dict. Note that
+       ``bool``, ``uuid.UUID``, ``datetime.time``,
+       ``datetime.date`` and ``datetime.datetime``. These are
+       only used as identifiers to translate using
+       ``map_python_to_graphql`` dict. Note that
        ``id``, although is not a type, maps to ``ID``.
 
      - ``name = TypeName`` for subclasses of ``BaseType``, such
@@ -1802,9 +1838,12 @@ class ContainerType(BaseTypeWithTypename, metaclass=ContainerTypeMeta):
     }
 
     def __init__(self, json_data, selection_list=None):
-        assert json_data is None or isinstance(json_data, dict), \
-            '%r (%s) is not a JSON Object' % (
-                json_data, type(json_data).__name__)
+        assert json_data is None or isinstance(
+            json_data, dict
+        ), '%r (%s) is not a JSON Object' % (
+            json_data,
+            type(json_data).__name__,
+        )
         object.__setattr__(self, '__selection_list__', selection_list)
         self.__populate_fields(json_data)
 
@@ -1818,7 +1857,8 @@ class ContainerType(BaseTypeWithTypename, metaclass=ContainerTypeMeta):
 
         if self.__selection_list__ is not None:
             self.__populate_fields_from_selection_list(
-                self.__selection_list__, json_data)
+                self.__selection_list__, json_data
+            )
         else:
             for field in self.__class__:
                 self.__populate_field_data(field, field.type, None, json_data)
@@ -1839,8 +1879,9 @@ class ContainerType(BaseTypeWithTypename, metaclass=ContainerTypeMeta):
             setattr(self, name, value)
             self.__fields_cache__[name] = field
         except Exception as exc:
-            raise ValueError('%s selection %r: %r (%s)' % (
-                self.__class__, name, value, exc)) from exc
+            raise ValueError(
+                '%s selection %r: %r (%s)' % (self.__class__, name, value, exc)
+            ) from exc
 
     def __populate_fields_from_selection_list(self, sl, json_data):
         selections = sl.__get_selections_or_auto_select__()
@@ -2075,9 +2116,10 @@ class ContainerType(BaseTypeWithTypename, metaclass=ContainerTypeMeta):
         return ContainerTypeMeta.__to_json_value__(self.__class__, self)
 
     def __bytes__(self):
-        return bytes(json.dumps(
-            self.__to_json_value__(), **self.__json_dump_args__),
-            'utf-8')
+        return bytes(
+            json.dumps(self.__to_json_value__(), **self.__json_dump_args__),
+            'utf-8',
+        )
 
 
 class BaseItem:
@@ -2089,7 +2131,11 @@ class BaseItem:
     '''
 
     __slots__ = (
-        '_type', 'graphql_name', 'name', 'schema', 'container',
+        '_type',
+        'graphql_name',
+        'name',
+        'schema',
+        'container',
     )
 
     def __init__(self, typ, graphql_name=None):
@@ -2238,8 +2284,7 @@ class Variable:
 
     @staticmethod
     def _to_graphql_name(name):
-        '''Converts a Python name, ``a_name`` to GraphQL: ``aName``.
-        '''
+        '''Converts a Python name, ``a_name`` to GraphQL: ``aName``.'''
         parts = name.split('_')
         return ''.join(parts[:1] + [p.title() for p in parts[1:]])
 
@@ -2269,6 +2314,7 @@ class Arg(BaseItem):
     }
 
     '''
+
     __slots__ = ('default',)
 
     def __init__(self, typ, graphql_name=None, default=None):
@@ -2306,7 +2352,8 @@ class Arg(BaseItem):
                 default = self.default.__to_graphql__(indent, indent_string)
             else:
                 default = self.type.__to_graphql_input__(
-                    self.default, indent, indent_string)
+                    self.default, indent, indent_string
+                )
             default = ' = ' + default
         return super(Arg, self).__to_graphql__(indent, indent_string) + default
 
@@ -2462,16 +2509,17 @@ class ArgDict(OrderedDict):
 
         s = ['(']
         if n <= 3:
-            args = (p.__to_graphql__(indent, indent_string)
-                    for p in self.values())
+            args = (
+                p.__to_graphql__(indent, indent_string) for p in self.values()
+            )
             s.extend((', '.join(args), ')'))
         else:
             s.append('\n')
             prefix = indent_string * (indent + 1)
             for p in self.values():
-                s.extend((prefix,
-                          p.__to_graphql__(indent, indent_string),
-                          '\n'))
+                s.extend(
+                    (prefix, p.__to_graphql__(indent, indent_string), '\n')
+                )
 
             s.extend((indent_string * indent, ')'))
         return ''.join(s)
@@ -2493,9 +2541,13 @@ class ArgDict(OrderedDict):
             prefix = indent_string * (indent + 2)
             for k, v in values.items():
                 p = self[k]
-                s.extend((prefix,
-                          p.__to_graphql_input__(v, indent, indent_string),
-                          '\n'))
+                s.extend(
+                    (
+                        prefix,
+                        p.__to_graphql_input__(v, indent, indent_string),
+                        '\n',
+                    )
+                )
 
             s.extend((indent_string * (indent + 1), ')'))
         return ''.join(s)
@@ -2582,6 +2634,7 @@ class Type(ContainerType):
     also making their fields automatically available in the final
     class.
     '''
+
     __kind__ = 'type'
 
 
@@ -2612,6 +2665,7 @@ class Interface(ContainerType):
     >>> SomeIface(data)
     SomeIface(i=123)
     '''
+
     __kind__ = 'interface'
 
     def __new__(cls, *args, **kwargs):
@@ -2655,6 +2709,7 @@ class Input(ContainerType):
     $input
 
     '''
+
     __kind__ = 'input'
 
     def __new__(cls, *args, **kwargs):
@@ -2827,6 +2882,7 @@ class Input(ContainerType):
 # Built-in types
 ########################################################################
 
+
 class Int(Scalar):
     '''Maps GraphQL ``Int`` to Python ``int``.
 
@@ -2838,6 +2894,7 @@ class Int(Scalar):
     b'scalar Int'
 
     '''
+
     converter = int
 
 

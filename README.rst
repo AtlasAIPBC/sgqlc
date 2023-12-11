@@ -13,18 +13,18 @@ Introduction
 This package offers an easy to use `GraphQL <http://graphql.org>`_
 client. It's composed of the following modules:
 
-- :mod:`sgqlc.types`: declare GraphQL in Python, base to generate and
-  interpret queries. Submodule :mod:`sgqlc.types.datetime` will
-  provide bindings for :mod:`datetime` and ISO 8601, while
-  :mod:`sgqlc.types.relay` will expose ``Node``, ``PageInfo`` and
+- ``sgqlc.types``: declare GraphQL in Python, base to generate and
+  interpret queries. Submodule ``sgqlc.types.datetime`` will
+  provide bindings for ``datetime`` and ISO 8601, while
+  ``sgqlc.types.relay`` will expose ``Node``, ``PageInfo`` and
   ``Connection``.
 
-- :mod:`sgqlc.operation`: use declared types to generate and
+- ``sgqlc.operation``: use declared types to generate and
   interpret queries.
 
-- :mod:`sgqlc.endpoint`: provide access to GraphQL endpoints, notably
-  :mod:`sgqlc.endpoint.http` provides :class:`HTTPEndpoint` using
-  :mod:`urllib.request.urlopen()`.
+- ``sgqlc.endpoint``: provide access to GraphQL endpoints, notably
+  ``sgqlc.endpoint.http`` provides ``HTTPEndpoint`` using
+  ``urllib.request.urlopen()``.
 
 
 What's GraphQL?
@@ -182,8 +182,8 @@ interpret the results. So **what was the rationale to create sgqlc?**
   types, such as ``Date``, ``Time`` and ``DateTime``. Often these are
   serialized as ISO 8601 strings and the user must parse them in their
   application. We offer ``sgqlc.types.datetime`` to automatically
-  generate :class:`datetime.date`, :class:`datetime.time` and
-  :class:`datetime.datetime`.
+  generate ``datetime.date``, ``datetime.time`` and
+  ``datetime.datetime``.
 
 - Make it easy to write dynamic queries, including nested. As seen,
   GraphQL can be used to fetch lots of information in one go; however
@@ -194,7 +194,7 @@ interpret the results. So **what was the rationale to create sgqlc?**
   "solve" this by parsing the query locally before sending it to
   server. However usually the indentation is screwed and reviewing it
   is painful. We change that approach: use
-  :class:`sgqlc.operation.Operation` and it will always generate valid
+  ``sgqlc.operation.Operation`` and it will always generate valid
   queries, which can be printed out and properly indented. Bonus point
   is that it can be used to later interpret the JSON results into native
   Python objects.
@@ -205,11 +205,11 @@ interpret the results. So **what was the rationale to create sgqlc?**
   and its widely used. To load more data, you need to extend the
   previous data with newly fetched information, updating not only the
   nodes and edges, but also page information. This is done
-  automatically by :class:`sgqlc.types.relay.Connection`.
+  automatically by ``sgqlc.types.relay.Connection``.
 
 It also helps with code-generation, ``sgqlc-codegen`` can generate both
 the classes matching a GraphQL Schema or functions to return
-:class:`sgqlc.operation.Operation` based on executable documents
+``sgqlc.operation.Operation`` based on executable documents
 GraphQL Domain Specific Language (DSL).
 
 
@@ -249,7 +249,7 @@ However, writing GraphQL queries and later interpreting the results
 may be cumbersome. That's solved by our ``sgqlc.types``, which is
 usually paired with ``sgqlc.operation`` to generate queries and then
 interpret results (see more at ``examples/basic/02_schema_types.py``). The
-example below matches a subset of 
+example below matches a subset of
 `GitHub API v4 <https://developer.github.com/v4/query/>`_.
 In GraphQL syntax it would be::
 
@@ -384,7 +384,7 @@ introspection call:
    user@host$ sgqlc-codegen schema github_schema.json github_schema.py
 
 This generates ``github_schema`` that provides the
-:class:`sgqlc.types.Schema` instance of the same name ``github_schema``.
+``sgqlc.types.Schema`` instance of the same name ``github_schema``.
 Then it's a matter of using that in your Python code, as in the example below
 from ``examples/github/github_agile_dashboard.py``:
 
@@ -423,7 +423,7 @@ You can also generate these operations given a GraphQL Domain Specific
 Language (DSL) operation:
 
 .. code-block::
-   
+
    # sample_operations.gql
 
    query ListIssues($owner: String!, $name: String!) {
@@ -484,34 +484,33 @@ License
 Getting started developing
 --------------------------
 
-You need to use `pipenv <https://pipenv.readthedocs.io/en/latest>`_.
+You need to use `poetry <https://python-poetry.org/docs/#installation>`_.
 
 ::
 
-    pipenv install --dev
-    pipenv shell
+    poetry install --all-extras --with dev
+    poetry shell
 
-Install the git hooks:
+Install the `pre-commit <https://pre-commit.com/index.html#install>`_:
 
 ::
 
-   ./utils/git/install-git-hooks.sh
+   pre-commit install -f
 
 Run the tests (one of the below):
 
 ::
 
-    ./utils/git/pre-commit       # flake8 and nose
-
-    ./setup.py nosetests         # only nose (unit/doc tests)
-    flake8 --config setup.cfg .  # style checks
+    pre-commit run -a            # run all tests: flake8, pytest, ...
+    pre-commit run -a flake8     # run only flake8
+    pre-commit run -a tests      # run only pytest (unit tests)
 
 Keep 100% coverage. You can look at the coverage report at
-``cover/index.html``.  To do that, prefer 
+``cover/index.html``.  To do that, prefer
 `doctest <https://docs.python.org/3.7/library/doctest.html>`_
 so it serves as
-both documentation and test. However we use 
-`nose <https://nose.readthedocs.io>`_ to write explicit tests that would be
+both documentation and test. However we use
+`pytest <https://docs.pytest.org/>`_ to write explicit tests that would be
 hard to express using ``doctest``.
 
 Build and review the generated Sphinx documentation, and validate if your
@@ -519,7 +518,7 @@ changes look right:
 
 ::
 
-    ./setup.py build_sphinx
+    sphinx-build doc/source doc/build
     open doc/build/html/index.html
 
 
