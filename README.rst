@@ -4,16 +4,13 @@
 This fork by AtlasAI PBC tweaks the query to dynamically change the `auto_select_depth` of a query
 
 A few notes for ourselves
+::
 
-```bash
-conda create -n sgqlc python=3.8
-conda activate sgqlc
-pip install poetry twine
-```
+  conda create -n sgqlc python=3.8
+  conda activate sgqlc
+  pip install poetry twine
 
-```bash
-TWINE_PASSWORD=... scripts/build.sh -t testpypi
-```
+  TWINE_PASSWORD=... scripts/build.sh -t testpypi
 
 
 Introduction
