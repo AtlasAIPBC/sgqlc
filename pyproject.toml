@@ -26,15 +26,15 @@ norecursedirs = [
 ]
 
 [tool.poetry]
-name = 'sgqlc'
+name = 'atlasai-sgqlc'
 version = '16.3'
 description = 'Simple GraphQL Client'
 readme = 'README.rst'
 authors = [
-    'Gustavo Sverzut Barbieri <barbieri@profusion.mobi>',
+		'AtlasAI SWE <swe@atlasai.co>',
 ]
-homepage = 'http://github.com/profusion/sgqlc'
-repository = 'http://github.com/profusion/sgqlc'
+homepage = 'http://github.com/AtlasAIPBC/sgqlc'
+repository = 'http://github.com/AtlasAIPBC/sgqlc'
 documentation = 'https://sgqlc.readthedocs.io/'
 license = 'ISCL'
 keywords = ['graphql', 'client', 'http', 'endpoint']

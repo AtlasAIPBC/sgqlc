@@ -1,11 +1,20 @@
 `sgqlc` - Simple GraphQL Client
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. image:: https://github.com/profusion/sgqlc/actions/workflows/ci.yml/badge.svg
-    :target: https://github.com/profusion/sgqlc/actions/workflows/ci.yml
+This fork by AtlasAI PBC tweaks the query to dynamically change the `auto_select_depth` of a query
 
-.. image:: https://coveralls.io/repos/github/profusion/sgqlc/badge.svg?branch=master
-    :target: https://coveralls.io/github/profusion/sgqlc?branch=master
+A few notes for ourselves
+
+```bash
+conda create -n sgqlc python=3.8
+conda activate sgqlc
+pip install poetry twine
+```
+
+```bash
+TWINE_PASSWORD=... scripts/build.sh -t testpypi
+```
+
 
 Introduction
 ------------
